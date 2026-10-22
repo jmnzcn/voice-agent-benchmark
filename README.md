@@ -3,6 +3,7 @@
 **¿Qué combinación de STT + LLM + TTS conviene para un agente de voz en español?**
 Medí 15 servicios (12 en la nube y 3 locales) en latencia, precisión, costo, privacidad, customización e integración, y armé 4 stacks completos de voz a voz para ver qué pasa en un turno real de conversación.
 
+[![tests](https://github.com/jmnzcn/voice-agent-benchmark/actions/workflows/test.yml/badge.svg)](https://github.com/jmnzcn/voice-agent-benchmark/actions/workflows/test.yml)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![Servicios](https://img.shields.io/badge/servicios-15-0A66C2)
 ![Llamadas](https://img.shields.io/badge/llamadas_medidas-700-2EA44F)
