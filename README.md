@@ -11,6 +11,10 @@ Medí 15 servicios (12 en la nube y 3 locales) en latencia, precisión, costo, p
 
 [English summary](#-english-summary) · [Resultados](#-resultados-clave) · [Metodología](#-metodología) · [Cómo reproducirlo](#-cómo-reproducirlo)
 
+![Carrera de un turno de voz a voz entre los 4 stacks, con los tiempos medidos](docs/demo.gif)
+
+<sub>Repetición animada de un turno real: tiempos por etapa, transcripciones y respuestas tomadas de [`results/e2e_results.csv`](results/e2e_results.csv) (corrida mediana de 5 por stack; después de 10 s el reloj se acelera ×8).</sub>
+
 ---
 
 ## 📊 Resultados clave
