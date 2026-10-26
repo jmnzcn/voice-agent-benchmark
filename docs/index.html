@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Agent Benchmark · resultados interactivos</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%8E%99%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<meta name="description" content="15 servicios de voz e IA medidos en español: arma tu stack STT + LLM + TTS y compara latencia, costo, calidad y privacidad con datos reales.">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #6f6e69;
+    --grid: #e1e0d9; --axis: #c3c2b7; --ring: rgba(11,11,11,.10); --wash: rgba(11,11,11,.04);
+    --stt: #2a78d6; --llm: #eb6834; --tts: #1baf7a; --ovh: #c3c2b7;
+    --accent: #2a78d6; --good: #006300;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #9a998f;
+      --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,.10); --wash: rgba(255,255,255,.05);
+      --stt: #3987e5; --llm: #d95926; --tts: #199e70; --ovh: #55544f;
+      --accent: #3987e5; --good: #0ca30c;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #9a998f;
+    --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,.10); --wash: rgba(255,255,255,.05);
+    --stt: #3987e5; --llm: #d95926; --tts: #199e70; --ovh: #55544f;
+    --accent: #3987e5; --good: #0ca30c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  a { color: var(--accent); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 16px 64px; }
+  header h1 { font-size: clamp(26px, 4vw, 36px); line-height: 1.15; margin: 0 0 8px; letter-spacing: -.02em; }
+  header p { margin: 0; color: var(--ink-2); max-width: 760px; }
+  .meta { margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 24px 0 8px; }
+  .tile { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 14px 16px; }
+  .tile b { display: block; font-size: 28px; line-height: 1.1; letter-spacing: -.02em; }
+  .tile span { font-size: 13px; color: var(--ink-2); }
+  section { margin-top: 40px; }
+  h2 { font-size: 22px; margin: 0 0 4px; letter-spacing: -.01em; }
+  .lead { margin: 0 0 16px; color: var(--ink-2); max-width: 780px; }
+  .card { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 18px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; margin-bottom: 14px; }
+  label.ctl { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: .04em; }
+  select, button { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--axis); border-radius: 8px; padding: 7px 10px; }
+  select { min-width: 210px; text-transform: none; letter-spacing: 0; font-weight: 400; }
+  button { cursor: pointer; }
+  button:hover { background: var(--wash); }
+  .seg-btns { display: inline-flex; border: 1px solid var(--axis); border-radius: 8px; overflow: hidden; }
+  .seg-btns button { border: 0; border-radius: 0; border-right: 1px solid var(--axis); padding: 7px 12px; }
+  .seg-btns button:last-child { border-right: 0; }
+  .seg-btns button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 16px; }
+  .presets button { font-size: 13px; padding: 5px 10px; border-radius: 999px; }
+  .presets button[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--ink-2); margin: 6px 0 10px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .result { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; align-items: start; }
+  .big { font-size: 44px; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
+  .sub { color: var(--ink-2); font-size: 14px; margin-top: 4px; }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .fact { border: 1px solid var(--ring); border-radius: 10px; padding: 10px 12px; }
+  .fact b { display: block; font-size: 20px; }
+  .fact span { font-size: 12.5px; color: var(--ink-2); }
+  .note { font-size: 13px; color: var(--muted); margin: 12px 0 0; }
+  .measured { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: var(--wash); font-size: 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .chip { font-size: 12.5px; border: 1px solid var(--ring); border-radius: 999px; padding: 2px 9px; color: var(--ink-2); }
+  svg { display: block; width: 100%; height: auto; overflow: visible; }
+  svg text { font: 12px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--ink-2); }
+  svg .lbl { fill: var(--ink); font-size: 13px; }
+  svg .val { fill: var(--ink); font-variant-numeric: tabular-nums; }
+  svg .tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .hit { fill: transparent; cursor: default; }
+  .hit:hover, .hit:focus { fill: var(--wash); outline: none; }
+  #tip { position: fixed; pointer-events: none; z-index: 10; max-width: 300px; background: var(--surface); color: var(--ink); border: 1px solid var(--ring); box-shadow: 0 6px 24px rgba(0,0,0,.14); border-radius: 10px; padding: 9px 11px; font-size: 13px; line-height: 1.4; opacity: 0; transition: opacity .1s; }
+  #tip b { display: block; margin-bottom: 2px; }
+  #tip .row { display: flex; justify-content: space-between; gap: 14px; }
+  #tip .row span:last-child { font-variant-numeric: tabular-nums; }
+  .turns { margin-top: 14px; display: grid; gap: 8px; }
+  .turn { border: 1px solid var(--ring); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+  .turn .t { color: var(--ink-2); }
+  .turn small { color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .table-wrap { overflow-x: auto; }
+  th, td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); cursor: pointer; user-select: none; }
+  th[aria-sort="ascending"]::after { content: " ▲"; } th[aria-sort="descending"]::after { content: " ▼"; }
+  tbody tr:hover { background: var(--wash); }
+  footer { margin-top: 48px; font-size: 13px; color: var(--muted); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  @media (max-width: 760px) {
+    .tiles { grid-template-columns: repeat(2, 1fr); }
+    .result { grid-template-columns: 1fr; }
+    .facts { grid-template-columns: 1fr 1fr 1fr; }
+    select { min-width: 0; width: 100%; }
+    .controls label.ctl { flex: 1 1 100%; }
+    .big { font-size: 38px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>¿Qué stack de voz conviene en español?</h1>
+    <p>15 servicios de STT, LLM y TTS (12 en la nube y 3 locales) medidos con los mismos audios y prompts. Arma tu propio stack, compara cada servicio y mira los turnos reales de voz a voz.</p>
+    <div class="meta">Datos de <a href="https://github.com/jmnzcn/voice-agent-benchmark">github.com/jmnzcn/voice-agent-benchmark</a> · corrida <span id="batch"></span> · por Ney Fred Jiménez Campos</div>
+  </header>
+
+  <div class="tiles" id="tiles"></div>
+
+  <section id="builder">
+    <h2>Arma tu stack</h2>
+    <p class="lead">Elige un servicio para cada etapa y mira cuánto tardaría y costaría un turno, sumando los promedios medidos de cada componente. Si eliges uno de los 4 stacks que se midieron de punta a punta, aparece también la medición real.</p>
+    <div class="card">
+      <div class="presets" id="presets" aria-label="Stacks medidos de punta a punta"></div>
+      <div class="controls">
+        <label class="ctl">1 · Voz → texto (STT)<select id="sel-stt"></select></label>
+        <label class="ctl">2 · Respuesta (LLM)<select id="sel-llm"></select></label>
+        <label class="ctl">3 · Texto → voz (TTS)<select id="sel-tts"></select></label>
+      </div>
+      <div class="result">
+        <div>
+          <div class="big" id="b-total"></div>
+          <div class="sub" id="b-sub"></div>
+          <div id="b-bar" style="margin-top:14px"></div>
+          <div class="legend"><span><i style="background:var(--stt)"></i>STT</span><span><i style="background:var(--llm)"></i>LLM</span><span><i style="background:var(--tts)"></i>TTS</span></div>
+          <div id="b-measured"></div>
+        </div>
+        <div>
+          <div class="facts" id="b-facts"></div>
+          <div class="chips" id="b-chips"></div>
+        </div>
+      </div>
+      <p class="note">La suma por componente es una estimación: cada servicio se midió por separado con varios audios y textos. En el turno real cambian la longitud del audio, de la respuesta y la red, por eso puede diferir de la medición de punta a punta.</p>
+    </div>
+  </section>
+
+  <section id="e2e">
+    <h2>Los 4 stacks medidos de punta a punta</h2>
+    <p class="lead">Promedio de 25 turnos por stack (5 audios × 5 corridas). Toca una barra para ver qué entendió y qué respondió cada stack.</p>
+    <div class="card">
+      <div class="controls">
+        <div class="seg-btns" role="group" aria-label="Escala">
+          <button type="button" data-e2e="all" aria-pressed="true">Los 4 stacks</button>
+          <button type="button" data-e2e="cloud" aria-pressed="false">Solo nube (zoom)</button>
+        </div>
+      </div>
+      <div class="legend"><span><i style="background:var(--stt)"></i>STT</span><span><i style="background:var(--llm)"></i>LLM</span><span><i style="background:var(--tts)"></i>TTS</span><span><i style="background:var(--ovh)"></i>Red y orquestación</span></div>
+      <div id="e2e-chart"></div>
+      <div class="turns" id="e2e-turns"></div>
+    </div>
+  </section>
+
+  <section id="compare">
+    <h2>Compara servicios</h2>
+    <p class="lead">Cada punto gris es una llamada medida; la barra es el promedio. 🔒 marca los servicios que corren en tu máquina.</p>
+    <div class="card">
+      <div class="controls">
+        <div class="seg-btns" role="group" aria-label="Categoría" id="cat-btns"></div>
+        <label class="ctl">Métrica<select id="sel-metric"></select></label>
+        <div class="seg-btns" role="group" aria-label="Escala" id="scale-btns">
+          <button type="button" data-scale="log" aria-pressed="true">Escala log</button>
+          <button type="button" data-scale="lin" aria-pressed="false">Lineal</button>
+        </div>
+      </div>
+      <div id="cmp-chart"></div>
+      <p class="note" id="cmp-note"></p>
+    </div>
+  </section>
+
+  <section id="scatter">
+    <h2>Latencia contra costo</h2>
+    <p class="lead">Lo ideal está abajo a la izquierda: rápido y barato. Los servicios locales cuestan $0 por llamada y van en la franja de abajo.</p>
+    <div class="card">
+      <div class="legend"><span><i style="background:var(--stt);border-radius:50%"></i>STT</span><span><i style="background:var(--llm);border-radius:50%"></i>LLM</span><span><i style="background:var(--tts);border-radius:50%"></i>TTS</span><span><i style="border:2px solid var(--ink-2);background:transparent;border-radius:50%"></i>Local</span></div>
+      <div id="sc-chart"></div>
+    </div>
+  </section>
+
+  <section id="table">
+    <h2>Todos los datos</h2>
+    <p class="lead">La matriz completa. Toca una columna para ordenar.</p>
+    <div class="card table-wrap"><table id="tbl"></table></div>
+  </section>
+
+  <footer>
+    Latencias y costos: promedio de la corrida <span class="batch2"></span> (5 corridas por entrada). Privacidad, customización e integración: puntaje de 1 a 5 con criterios documentados. Calidad LLM y MOS de TTS: revisión manual. Metodología y datos crudos en el <a href="https://github.com/jmnzcn/voice-agent-benchmark">repositorio</a>; esta página se genera con <code>scripts/build_site_data.py</code>.
+  </footer>
+</div>
+<div id="tip" role="status" aria-live="polite"></div>
+
+<script>
+const NAMES = { openai: 'OpenAI', anthropic: 'Anthropic', google: 'Google', groq: 'Groq', ollama: 'Ollama', deepgram: 'Deepgram', assemblyai: 'AssemblyAI', azure: 'Azure', 'faster-whisper': 'faster-whisper', elevenlabs: 'ElevenLabs', piper: 'Piper' };
+const STACK_NAMES = { 'Demo rápida nube': '⚡ Demo rápida', 'Stack Azure': '☁️ Stack Azure', 'Calidad premium': '💎 Calidad premium', 'Privacidad offline': '🔒 100 % local' };
+const CAT = { stt: 'STT', llm: 'LLM', tts: 'TTS' };
+const nf = (d) => new Intl.NumberFormat('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtMs = (ms) => ms >= 10000 ? nf(0).format(ms / 1000) + ' s' : ms >= 1000 ? nf(1).format(ms / 1000) + ' s' : nf(0).format(ms) + ' ms';
+const fmtUsd = (v) => v === 0 ? '$0' : '$' + (v < 0.001 ? nf(5).format(v) : v < 0.01 ? nf(4).format(v) : nf(3).format(v));
+const pct = (v) => nf(1).format(v * 100) + ' %';
+// Los CSV guardan solo los primeros 240 caracteres de cada texto
+const clip = (t) => t.length >= 235 ? t.replace(/\s+\S*$/, '') + '…' : t;
+const name = (s) => NAMES[s.proveedor] || s.proveedor;
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (parent) parent.appendChild(e); return e; };
+
+// Tooltip compartido: hover y foco de teclado
+const tip = document.getElementById('tip');
+function showTip(evt, html) {
+  tip.innerHTML = html; tip.style.opacity = 1;
+  const r = evt.currentTarget.getBoundingClientRect();
+  const x = evt.clientX ?? (r.left + r.width / 2), y = evt.clientY ?? r.top;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.min(window.innerWidth - w - 8, Math.max(8, x + 14)) + 'px';
+  tip.style.top = (y - h - 12 < 8 ? y + 18 : y - h - 12) + 'px';
+}
+const hideTip = () => { tip.style.opacity = 0; };
+function bindTip(node, html) {
+  node.setAttribute('tabindex', '0');
+  node.addEventListener('mousemove', (e) => showTip(e, html()));
+  node.addEventListener('focus', (e) => showTip(e, html()));
+  node.addEventListener('mouseleave', hideTip); node.addEventListener('blur', hideTip);
+}
+const widthOf = (id) => Math.max(300, Math.round(document.getElementById(id).clientWidth));
+const rows = (pairs) => pairs.filter(Boolean).map(([a, b]) => `<div class="row"><span>${a}</span><span>${b}</span></div>`).join('');
+
+fetch('site/data.json').then((r) => r.json()).then(init).catch((e) => {
+  document.querySelector('.wrap').insertAdjacentHTML('afterbegin', `<p class="card">No se pudieron cargar los datos (${esc(e.message)}).</p>`);
+});
+
+function init(D) {
+  const S = D.servicios, byId = Object.fromEntries(S.map((s) => [s.id, s]));
+  const batch = (D.run_batch_id || '').slice(0, 10);
+  document.getElementById('batch').textContent = batch;
+  document.querySelectorAll('.batch2').forEach((n) => (n.textContent = batch));
+  const totalCalls = Object.values(D.llamadas).reduce((a, v) => a + v.length, 0) + D.e2e.reduce((a, s) => a + s.turnos, 0);
+
+  // ---------- Tiles
+  const fast = D.e2e[0], premium = D.e2e.find((s) => s.escenario === 'Calidad premium') || D.e2e[D.e2e.length - 2];
+  const fw = byId['stt/faster-whisper'], bestWer = S.filter((s) => s.wer != null).sort((a, b) => a.wer - b.wer)[0];
+  document.getElementById('tiles').innerHTML = [
+    [fmtMs(fast.total_ms), `por turno con ${name({ proveedor: fast.stt })} → ${name({ proveedor: fast.llm })} → ${name({ proveedor: fast.tts })}, el stack más rápido`],
+    [`${nf(0).format(premium.total_ms / fast.total_ms)}× / ${nf(0).format(premium.costo_usd / fast.costo_usd)}×`, 'más rápido / más barato que el stack premium'],
+    [pct(fw.wer), `WER de faster-whisper local, contra ${pct(bestWer.wer)} del mejor en la nube`],
+    [nf(0).format(totalCalls), 'llamadas medidas en 15 servicios y 4 stacks completos'],
+  ].map(([b, s]) => `<div class="tile"><b>${b}</b><span>${s}</span></div>`).join('');
+
+  // ---------- Arma tu stack
+  const sel = { stt: document.getElementById('sel-stt'), llm: document.getElementById('sel-llm'), tts: document.getElementById('sel-tts') };
+  for (const cat of ['stt', 'llm', 'tts']) {
+    S.filter((s) => s.categoria === cat).sort((a, b) => a.latencia_ms - b.latencia_ms).forEach((s) => {
+      sel[cat].add(new Option(`${s.local ? '🔒 ' : ''}${name(s)} · ${s.modelo} · ${fmtMs(s.latencia_ms)}`, s.id));
+    });
+    sel[cat].addEventListener('change', () => renderBuilder());
+  }
+  const presets = document.getElementById('presets');
+  D.e2e.forEach((st) => {
+    const b = document.createElement('button'); b.type = 'button';
+    b.textContent = `${STACK_NAMES[st.escenario] || st.escenario}`;
+    b.addEventListener('click', () => { sel.stt.value = 'stt/' + st.stt; sel.llm.value = 'llm/' + st.llm; sel.tts.value = 'tts/' + st.tts; renderBuilder(); });
+    presets.appendChild(b);
+  });
+  sel.stt.value = 'stt/' + fast.stt; sel.llm.value = 'llm/' + fast.llm; sel.tts.value = 'tts/' + fast.tts;
+
+  function stageBar(parts, max, height = 26) {
+    const W = 600, svg = el('svg', { viewBox: `0 0 ${W} ${height}`, role: 'img' });
+    let x = 0; const gap = 2;
+    parts.forEach((p, i) => {
+      const w = Math.max(0, p.ms / max * W);
+      const last = i === parts.length - 1;
+      if (w > 0) {
+        const r = el('rect', { x, y: 0, width: Math.max(1, w - (last ? 0 : gap)), height, rx: 4, fill: p.color }, svg);
+        bindTip(r, () => `<b>${p.label}</b>${rows([['Latencia', fmtMs(p.ms)], ['Parte del turno', nf(0).format(p.ms / parts.reduce((a, q) => a + q.ms, 0) * 100) + ' %']])}`);
+      }
+      x += w;
+    });
+    svg.setAttribute('aria-label', parts.map((p) => `${p.label}: ${fmtMs(p.ms)}`).join(', '));
+    return svg;
+  }
+
+  function renderBuilder() {
+    const st = byId[sel.stt.value], lm = byId[sel.llm.value], ts = byId[sel.tts.value];
+    const total = st.latencia_ms + lm.latencia_ms + ts.latencia_ms;
+    const cost = st.costo_usd + lm.costo_usd + ts.costo_usd;
+    const priv = Math.min(st.privacidad, lm.privacidad, ts.privacidad);
+    const allLocal = st.local && lm.local && ts.local;
+    document.getElementById('b-total').textContent = fmtMs(total);
+    document.getElementById('b-sub').textContent = `por turno, estimado · ${total <= 2500 ? 'apto para conversación en tiempo real' : total <= 8000 ? 'se nota la espera en una conversación' : 'demasiado lento para conversar en tiempo real'}`;
+    const max = Math.max(total, 4000);
+    const bar = document.getElementById('b-bar'); bar.innerHTML = '';
+    bar.appendChild(stageBar([
+      { label: `STT · ${name(st)}`, ms: st.latencia_ms, color: 'var(--stt)' },
+      { label: `LLM · ${name(lm)}`, ms: lm.latencia_ms, color: 'var(--llm)' },
+      { label: `TTS · ${name(ts)}`, ms: ts.latencia_ms, color: 'var(--tts)' },
+    ], max));
+    document.getElementById('b-facts').innerHTML = [
+      [fmtUsd(cost), 'costo por turno'],
+      [cost === 0 ? '$0' : '$' + nf(2).format(cost * 10000), 'por 10.000 turnos'],
+      [allLocal ? '5 / 5' : `${priv} / 5`, allLocal ? 'privacidad: no sale de la máquina' : 'privacidad (la del eslabón más débil)'],
+    ].map(([b, s]) => `<div class="fact"><b>${b}</b><span>${s}</span></div>`).join('');
+    const q = [
+      `STT: WER ${pct(st.wer)}`,
+      lm.calidad.json != null ? `LLM: JSON válido ${nf(0).format(lm.calidad.json * 100)} % · coherencia ${lm.calidad.coherencia}/5` : null,
+      ts.calidad.naturalidad != null ? `TTS: naturalidad ${ts.calidad.naturalidad}/5` : null,
+      lm.ttft_ms != null ? `Primer token del LLM: ${fmtMs(lm.ttft_ms)}` : null,
+    ].filter(Boolean);
+    document.getElementById('b-chips').innerHTML = q.map((c) => `<span class="chip">${c}</span>`).join('');
+
+    const m = D.e2e.find((s) => 'stt/' + s.stt === st.id && 'llm/' + s.llm === lm.id && 'tts/' + s.tts === ts.id);
+    presets.querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-pressed', D.e2e[i] === m));
+    const box = document.getElementById('b-measured'); box.innerHTML = '';
+    if (m) {
+      const div = document.createElement('div'); div.className = 'measured';
+      div.innerHTML = `<b>Medido de punta a punta: ${fmtMs(m.total_ms)}</b> por turno y ${fmtUsd(m.costo_usd)} (promedio de ${m.turnos} turnos reales).`;
+      const b = stageBar([
+        { label: 'STT', ms: m.stt_ms, color: 'var(--stt)' }, { label: 'LLM', ms: m.llm_ms, color: 'var(--llm)' },
+        { label: 'TTS', ms: m.tts_ms, color: 'var(--tts)' }, { label: 'Red y orquestación', ms: m.overhead_ms, color: 'var(--ovh)' },
+      ], max, 14);
+      b.style.marginTop = '8px'; div.appendChild(b); box.appendChild(div);
+    }
+  }
+  renderBuilder();
+
+  // ---------- E2E
+  let e2eMode = 'all', e2eSel = null;
+  function renderE2E() {
+    const data = e2eMode === 'all' ? D.e2e : D.e2e.filter((s) => !(s.stt === 'faster-whisper'));
+    const W = widthOf('e2e-chart'), narrow = W < 560;
+    const rowH = narrow ? 62 : 46, left = narrow ? 0 : 220, right = 56, top = 8, H = top + data.length * rowH + 26;
+    const max = Math.max(...data.map((s) => s.total_ms)) * 1.02;
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Latencia promedio por etapa de cada stack' });
+    const x = (ms) => left + ms / max * (W - left - right);
+    const step = max > 20000 ? (narrow ? 20000 : 10000) : 2000;
+    for (let v = 0; v <= max; v += step) {
+      el('line', { x1: x(v), x2: x(v), y1: top, y2: H - 22, stroke: v === 0 ? 'var(--axis)' : 'var(--grid)', 'stroke-width': 1 }, svg);
+      el('text', { x: x(v), y: H - 6, 'text-anchor': 'middle', class: 'tick' }, svg).textContent = nf(0).format(v / 1000) + ' s';
+    }
+    data.forEach((s, i) => {
+      const ly = top + i * rowH + 10, y = narrow ? ly + 24 : ly, h = narrow ? 18 : 24;
+      el('text', { x: 0, y: ly + (narrow ? 4 : 11), class: 'lbl' }, svg).textContent = STACK_NAMES[s.escenario] || s.escenario;
+      el('text', { x: narrow ? W : 0, y: ly + (narrow ? 4 : 26), class: 'tick', 'text-anchor': narrow ? 'end' : 'start' }, svg).textContent = `${name({ proveedor: s.stt })} → ${name({ proveedor: s.llm })} → ${name({ proveedor: s.tts })}`;
+      let acc = 0;
+      const parts = [['STT', s.stt_ms, 'var(--stt)'], ['LLM', s.llm_ms, 'var(--llm)'], ['TTS', s.tts_ms, 'var(--tts)'], ['Red y orquestación', s.overhead_ms, 'var(--ovh)']];
+      parts.forEach(([lab, ms, color], j) => {
+        const w = (x(acc + ms) - x(acc)) - (j < parts.length - 1 ? 2 : 0);
+        if (w > 0.5) el('rect', { x: x(acc), y, width: w, height: h, rx: 4, fill: color, opacity: e2eSel && e2eSel !== s ? .35 : 1 }, svg);
+        acc += ms;
+      });
+      el('text', { x: x(s.total_ms) + 8, y: y + h / 2 + 4, class: 'val' }, svg).textContent = fmtMs(s.total_ms);
+      const hit = el('rect', { x: 0, y: ly - 8, width: W, height: rowH - 4, class: 'hit', role: 'button', 'aria-label': `${s.escenario}: ${fmtMs(s.total_ms)}` }, svg);
+      hit.style.cursor = 'pointer';
+      bindTip(hit, () => `<b>${STACK_NAMES[s.escenario] || s.escenario}</b>${rows([['STT', fmtMs(s.stt_ms)], ['LLM', fmtMs(s.llm_ms)], ['TTS', fmtMs(s.tts_ms)], ['Red y orquestación', fmtMs(s.overhead_ms)], ['Total', fmtMs(s.total_ms)], ['Costo por turno', fmtUsd(s.costo_usd)]])}`);
+      const pick = () => { e2eSel = e2eSel === s ? null : s; renderE2E(); };
+      hit.addEventListener('click', pick);
+      hit.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+    });
+    const box = document.getElementById('e2e-chart'); box.innerHTML = ''; box.appendChild(svg);
+    const turns = document.getElementById('e2e-turns');
+    if (!e2eSel) { turns.innerHTML = ''; return; }
+    const seen = new Set(), ex = e2eSel.corridas.filter((c) => !seen.has(c.test_id) && seen.add(c.test_id));
+    turns.innerHTML = `<div class="sub"><b>${STACK_NAMES[e2eSel.escenario] || e2eSel.escenario}</b>: un turno por cada audio de prueba (primera corrida)</div>` + ex.map((c) => `
+      <div class="turn"><small>${esc(c.test_id)} · ${fmtMs(c.total_ms)}</small>
+      <div class="t">📝 ${esc(clip(c.transcripcion))}</div><div>💬 ${esc(clip(c.respuesta))}</div></div>`).join('');
+  }
+  document.querySelectorAll('[data-e2e]').forEach((b) => b.addEventListener('click', () => {
+    e2eMode = b.dataset.e2e; document.querySelectorAll('[data-e2e]').forEach((o) => o.setAttribute('aria-pressed', o === b)); renderE2E();
+  }));
+  renderE2E();
+
+  // ---------- Comparar servicios
+  const METRICS = {
+    latencia: { label: 'Latencia promedio', get: (s) => s.latencia_ms, fmt: fmtMs, lowGood: true, runs: true, cats: ['stt', 'llm', 'tts'] },
+    ttft: { label: 'Tiempo al primer token', get: (s) => s.ttft_ms, fmt: fmtMs, lowGood: true, cats: ['llm'] },
+    costo: { label: 'Costo por llamada (USD)', get: (s) => s.costo_usd, fmt: fmtUsd, lowGood: true, cats: ['stt', 'llm', 'tts'] },
+    wer: { label: 'WER (menor es mejor)', get: (s) => s.wer, fmt: pct, lowGood: true, cats: ['stt'] },
+    json: { label: 'JSON válido', get: (s) => s.calidad.json, fmt: (v) => nf(0).format(v * 100) + ' %', max: 1, cats: ['llm'] },
+    coherencia: { label: 'Coherencia (1–5)', get: (s) => s.calidad.coherencia, fmt: (v) => v + ' / 5', max: 5, cats: ['llm'] },
+    naturalidad: { label: 'Naturalidad de la voz (1–5)', get: (s) => s.calidad.naturalidad, fmt: (v) => v + ' / 5', max: 5, cats: ['tts'] },
+    privacidad: { label: 'Privacidad (1–5)', get: (s) => s.privacidad, fmt: (v) => v + ' / 5', max: 5, cats: ['stt', 'llm', 'tts'] },
+    customizacion: { label: 'Customización (1–5)', get: (s) => s.customizacion, fmt: (v) => v + ' / 5', max: 5, cats: ['stt', 'llm', 'tts'] },
+    integracion: { label: 'Facilidad de integración (1–5)', get: (s) => s.integracion, fmt: (v) => v + ' / 5', max: 5, cats: ['stt', 'llm', 'tts'] },
+  };
+  let cat = 'llm', metric = 'latencia', scale = 'log';
+  const catBtns = document.getElementById('cat-btns'), selMetric = document.getElementById('sel-metric');
+  ['llm', 'stt', 'tts'].forEach((c) => {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = CAT[c]; b.dataset.cat = c;
+    b.addEventListener('click', () => { cat = c; if (!METRICS[metric].cats.includes(c)) metric = 'latencia'; renderCmp(); });
+    catBtns.appendChild(b);
+  });
+  selMetric.addEventListener('change', () => { metric = selMetric.value; renderCmp(); });
+  document.querySelectorAll('[data-scale]').forEach((b) => b.addEventListener('click', () => { scale = b.dataset.scale; renderCmp(); }));
+
+  function renderCmp() {
+    catBtns.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.cat === cat));
+    selMetric.innerHTML = '';
+    for (const [k, m] of Object.entries(METRICS)) if (m.cats.includes(cat)) selMetric.add(new Option(m.label, k, false, k === metric));
+    const M = METRICS[metric];
+    const canLog = !!M.runs;
+    document.getElementById('scale-btns').style.display = canLog ? '' : 'none';
+    const useLog = canLog && scale === 'log';
+    document.querySelectorAll('[data-scale]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.scale === scale));
+    const data = S.filter((s) => s.categoria === cat && M.get(s) != null)
+      .sort((a, b) => M.lowGood ? M.get(a) - M.get(b) : M.get(b) - M.get(a));
+    const runs = M.runs ? D.llamadas[cat] : [];
+    const W = widthOf('cmp-chart'), narrow = W < 560;
+    const rowH = narrow ? 58 : 40, left = narrow ? 0 : 210, right = narrow ? 8 : 80, top = 4, H = top + data.length * rowH + 26;
+    const vals = data.map(M.get).concat(runs.map((r) => r[2]));
+    let max = M.max || Math.max(...vals) * 1.05;
+    const lo = useLog ? Math.pow(10, Math.floor(Math.log10(Math.min(...vals.filter((v) => v > 0))))) : 0;
+    if (useLog) max = Math.max(...vals) * 1.4;
+    const x = (v) => useLog ? left + (Math.log10(Math.max(v, lo)) - Math.log10(lo)) / (Math.log10(max) - Math.log10(lo)) * (W - left - right)
+                            : left + v / max * (W - left - right);
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': `${M.label} por servicio ${CAT[cat]}` });
+    const ticks = useLog ? (() => { const t = []; for (let v = lo; v <= max; v *= 10) t.push(v); return t; })()
+      : M.max ? Array.from({ length: (M.max === 1 ? 5 : M.max) + 1 }, (_, i) => M.max === 1 ? i / 5 : i) : niceTicks(max);
+    ticks.forEach((v) => {
+      el('line', { x1: x(v), x2: x(v), y1: top, y2: H - 22, stroke: v === 0 || v === lo ? 'var(--axis)' : 'var(--grid)' }, svg);
+      el('text', { x: x(v), y: H - 6, 'text-anchor': 'middle', class: 'tick' }, svg).textContent = M.fmt(v);
+    });
+    data.forEach((s, i) => {
+      const ly = top + i * rowH + 8, y = narrow ? ly + 22 : ly, h = 22, v = M.get(s);
+      el('text', { x: 0, y: ly + 10, class: 'lbl' }, svg).textContent = `${s.local ? '🔒 ' : ''}${name(s)}${narrow ? ' · ' + s.modelo : ''}`;
+      if (!narrow) el('text', { x: 0, y: ly + 24, class: 'tick' }, svg).textContent = s.modelo;
+      el('rect', { x: x(useLog ? lo : 0), y: y + 4, width: Math.max(2, x(v) - x(useLog ? lo : 0)), height: h - 8, rx: 4, fill: 'var(--accent)', opacity: M.runs ? .28 : 1 }, svg);
+      if (M.runs) {
+        const mine = runs.filter((r) => r[0] === s.proveedor);
+        mine.forEach((r, k) => el('circle', { cx: x(r[2]), cy: y + h / 2 + ((k * 7) % 11) - 5, r: 2.4, fill: 'var(--ink-2)', opacity: .45 }, svg));
+        el('rect', { x: x(v) - 1.5, y: y, width: 3, height: h, rx: 1.5, fill: 'var(--accent)' }, svg);
+      }
+      el('text', { x: narrow ? W : W - right + 10, y: narrow ? ly + 10 : y + 15, class: 'val', 'text-anchor': narrow ? 'end' : 'start' }, svg).textContent = M.fmt(v);
+      const hit = el('rect', { x: 0, y: ly - 6, width: W, height: rowH - 2, class: 'hit' }, svg);
+      bindTip(hit, () => {
+        const mine = M.runs ? runs.filter((r) => r[0] === s.proveedor).map((r) => r[2]).sort((a, b) => a - b) : [];
+        return `<b>${name(s)} · ${esc(s.modelo)}</b>${rows([
+          [M.label, M.fmt(v)],
+          mine.length ? ['Llamadas', mine.length] : null,
+          mine.length ? ['Más rápida / más lenta', `${fmtMs(mine[0])} / ${fmtMs(mine[mine.length - 1])}`] : null,
+          ['Costo por llamada', fmtUsd(s.costo_usd)], ['Privacidad', s.privacidad + ' / 5'], s.local ? ['Corre', 'en tu máquina'] : null,
+        ])}`;
+      });
+    });
+    const box = document.getElementById('cmp-chart'); box.innerHTML = ''; box.appendChild(svg);
+    document.getElementById('cmp-note').textContent = {
+      wer: 'WER promedio sobre 14 audios (sintéticos, Common Voice con ruido y FLEURS) × 5 corridas.',
+      json: 'Respuestas con JSON válido en el prompt de esquema estricto (5 llamadas por proveedor).',
+      coherencia: 'Revisión manual de las respuestas a 4 prompts, escala de 1 a 5.',
+      naturalidad: 'Escucha manual de la misma oración por proveedor, escala de 1 a 5.',
+      costo: 'Costo estimado por llamada con las tarifas públicas de cada proveedor; los locales cuestan $0 de API.',
+    }[metric] || (useLog ? 'Escala logarítmica: cada línea vertical es 10× la anterior.' : '');
+  }
+  function niceTicks(max) { const p = Math.pow(10, Math.floor(Math.log10(max))), s = max / p > 5 ? 2 * p : max / p > 2 ? p : p / 2; const t = []; for (let v = 0; v <= max; v += s) t.push(v); return t; }
+  renderCmp();
+
+  // ---------- Dispersión latencia vs costo
+  function renderScatter() {
+    const W = widthOf('sc-chart'), narrow = W < 560;
+    const H = narrow ? 340 : 380, L = narrow ? 58 : 84, R = 14, T = 14, B = 64, band = 26;
+    const pts = S.filter((s) => s.latencia_ms != null && s.costo_usd != null);
+    const xLo = 100, xHi = 100000, yLo = 0.0001, yHi = 0.3;
+    const x = (v) => L + (Math.log10(v) - Math.log10(xLo)) / (Math.log10(xHi) - Math.log10(xLo)) * (W - L - R);
+    const yTop = T, yBot = H - B - band;
+    const y = (v) => v === 0 ? H - B - band / 2 + 6 : yBot - (Math.log10(v) - Math.log10(yLo)) / (Math.log10(yHi) - Math.log10(yLo)) * (yBot - yTop);
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Latencia contra costo por servicio' });
+    [100, 1000, 10000, 100000].forEach((v) => {
+      el('line', { x1: x(v), x2: x(v), y1: T, y2: H - B + 4, stroke: 'var(--grid)' }, svg);
+      el('text', { x: x(v), y: H - B + 20, 'text-anchor': 'middle', class: 'tick' }, svg).textContent = fmtMs(v);
+    });
+    [[0.0001, '$0,0001'], [0.001, '$0,001'], [0.01, '$0,01'], [0.1, '$0,10']].forEach(([v, t]) => {
+      el('line', { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: 'var(--grid)' }, svg);
+      el('text', { x: L - 8, y: y(v) + 4, 'text-anchor': 'end', class: 'tick' }, svg).textContent = t;
+    });
+    el('rect', { x: L, y: yBot + 6, width: W - L - R, height: band - 6, fill: 'var(--wash)', rx: 4 }, svg);
+    el('text', { x: L - 8, y: y(0) + 4, 'text-anchor': 'end', class: 'tick' }, svg).textContent = '$0';
+    el('text', { x: L + (W - L - R) / 2, y: H - 18, 'text-anchor': 'middle' }, svg).textContent = 'Latencia promedio por llamada (escala log) →';
+    if (!narrow) el('text', { x: 12, y: T + (yBot - T) / 2, 'text-anchor': 'middle', transform: `rotate(-90 12 ${T + (yBot - T) / 2})` }, svg).textContent = 'Costo por llamada (USD, log) →';
+    const color = { stt: 'var(--stt)', llm: 'var(--llm)', tts: 'var(--tts)' };
+    // Etiquetas: se alternan arriba/abajo para no chocar con el vecino
+    const placed = [];
+    pts.sort((a, b) => a.latencia_ms - b.latencia_ms).forEach((s) => {
+      const cx = x(s.latencia_ms), cy = y(s.costo_usd);
+      const c = el('circle', { cx, cy, r: 6, fill: s.local ? 'var(--surface)' : color[s.categoria], stroke: s.local ? color[s.categoria] : 'var(--surface)', 'stroke-width': s.local ? 2.5 : 2 }, svg);
+      let ly = cy - 11;
+      const near = (yy) => placed.some((p) => Math.abs(p.x - cx) < (narrow ? 60 : 80) && Math.abs(p.y - yy) < 13);
+      if (near(ly)) ly = cy + 20;
+      if (near(ly)) ly = cy - 24;
+      // Sin lugar libre: el nombre queda en el tooltip y en la tabla
+      const showLabel = !near(ly);
+      placed.push({ x: cx, y: ly });
+      if (showLabel) el('text', { x: cx, y: ly, 'text-anchor': cx < L + 40 ? 'start' : cx > W - R - 40 ? 'end' : 'middle', class: 'lbl', style: `font-size:${narrow ? 10.5 : 11.5}px` }, svg).textContent = `${name(s)} ${CAT[s.categoria]}`;
+      const hit = el('circle', { cx, cy, r: 14, class: 'hit' }, svg);
+      bindTip(hit, () => `<b>${CAT[s.categoria]} · ${name(s)}</b><div style="color:var(--ink-2)">${esc(s.modelo)}${s.local ? ' · local' : ''}</div>${rows([['Latencia', fmtMs(s.latencia_ms)], ['Costo por llamada', fmtUsd(s.costo_usd)], ['Privacidad', s.privacidad + ' / 5']])}`);
+    });
+    const box = document.getElementById('sc-chart'); box.innerHTML = ''; box.appendChild(svg);
+  }
+  renderScatter();
+
+  // Los gráficos se dibujan al ancho real: redibujar al cambiar el tamaño
+  let lastW = window.innerWidth, timer;
+  window.addEventListener('resize', () => {
+    if (window.innerWidth === lastW) return;
+    lastW = window.innerWidth;
+    clearTimeout(timer); timer = setTimeout(() => { renderE2E(); renderCmp(); renderScatter(); }, 150);
+  });
+
+  // ---------- Tabla
+  const COLS = [
+    ['Servicio', (s) => `${s.local ? '🔒 ' : ''}${CAT[s.categoria]} · ${name(s)}`, (s) => s.categoria + s.proveedor],
+    ['Modelo', (s) => esc(s.modelo), (s) => s.modelo],
+    ['Latencia', (s) => fmtMs(s.latencia_ms), (s) => s.latencia_ms],
+    ['TTFT', (s) => s.ttft_ms != null ? fmtMs(s.ttft_ms) : '—', (s) => s.ttft_ms ?? Infinity],
+    ['WER', (s) => s.wer != null ? pct(s.wer) : '—', (s) => s.wer ?? Infinity],
+    ['USD / llamada', (s) => fmtUsd(s.costo_usd), (s) => s.costo_usd],
+    ['Privacidad', (s) => s.privacidad, (s) => -s.privacidad],
+    ['Custom.', (s) => s.customizacion, (s) => -s.customizacion],
+    ['Integración', (s) => s.integracion, (s) => -s.integracion],
+  ];
+  let sortCol = 2, sortDir = 1;
+  const tbl = document.getElementById('tbl');
+  function renderTable() {
+    const data = [...S].sort((a, b) => { const va = COLS[sortCol][2](a), vb = COLS[sortCol][2](b); return (va > vb ? 1 : va < vb ? -1 : 0) * sortDir; });
+    tbl.innerHTML = `<thead><tr>${COLS.map((c, i) => `<th scope="col" tabindex="0" aria-sort="${i === sortCol ? (sortDir > 0 ? 'ascending' : 'descending') : 'none'}">${c[0]}</th>`).join('')}</tr></thead>
+      <tbody>${data.map((s) => `<tr>${COLS.map((c) => `<td>${c[1](s)}</td>`).join('')}</tr>`).join('')}</tbody>`;
+    tbl.querySelectorAll('th').forEach((th, i) => {
+      const go = () => { sortDir = sortCol === i ? -sortDir : 1; sortCol = i; renderTable(); };
+      th.addEventListener('click', go); th.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+    });
+  }
+  renderTable();
+}
+</script>
+</body>
+</html>

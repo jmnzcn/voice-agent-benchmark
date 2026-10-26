@@ -8,6 +8,7 @@ secrets/
 !results/run_manifest.json
 !results/hardware_snapshot.json
 !results/network_speedtest.json
+!docs/site/data.json
 venv/
 .venv/
 env/

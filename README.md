@@ -15,6 +15,8 @@ Medí 15 servicios (12 en la nube y 3 locales) en latencia, precisión, costo, p
 
 <sub>Repetición animada de un turno real: tiempos por etapa, transcripciones y respuestas tomadas de [`results/e2e_results.csv`](results/e2e_results.csv) (corrida mediana de 5 por stack; después de 10 s el reloj se acelera ×8).</sub>
 
+**▶ [Explora los resultados interactivos](https://jmnzcn.github.io/voice-agent-benchmark/)**: arma tu propio stack STT + LLM + TTS y mira cuánto tardaría y costaría un turno, compara los 15 servicios llamada por llamada y lee qué entendió y respondió cada stack.
+
 ---
 
 ## 📊 Resultados clave
@@ -140,6 +142,7 @@ python scripts/dedupe_results.py      # si re-corriste inputs sin reset_results
 python scripts/reset_results.py
 python scripts/run_analysis.py --with-optional   # recalcula MOS de inteligibilidad con Whisper en CPU (lento)
 python scripts/smoke_analysis.py
+python scripts/build_site_data.py     # regenera docs/site/data.json para la página interactiva
 python -m pytest tests/ -q
 ```
 
@@ -182,6 +185,7 @@ I benchmarked **15 speech and language services** (12 cloud, 3 fully local) for 
 
 - **Fastest stack was also the cheapest:** Deepgram → Groq → Google TTS answered in **1.8 s per turn at $0.007**, about 5× faster and 12× cheaper than the premium stack (AssemblyAI → GPT-4o → ElevenLabs).
 - **Local STT nearly matches the best cloud option:** faster-whisper large-v3 reached **5.0 % WER** vs. 4.7 % for AssemblyAI, at $0 API cost, but ~37 s per clip on a 4 GB GPU.
+- **[Interactive results](https://jmnzcn.github.io/voice-agent-benchmark/)** (Spanish UI): build your own STT + LLM + TTS stack and compare every service.
 - **Groq leads LLM latency** (695 ms average, 227 ms to first token). OpenAI, Anthropic and Groq returned valid JSON 100 % of the time; Gemini 2.5 Flash only 60 %.
 - **TTS pricing varies ~19×** between ElevenLabs (best naturalness) and Google Neural2 (fastest).
 - **Fully offline is viable for privacy, not real time** on modest hardware (62 s per turn).
