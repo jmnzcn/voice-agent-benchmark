@@ -1,130 +1,140 @@
-# 🎙️ Voice Agent Benchmark
-
-**¿Qué combinación de STT + LLM + TTS conviene para un agente de voz en español?**
-Medí 15 servicios (12 en la nube y 3 locales) en latencia, precisión, costo, privacidad, customización e integración, y armé 4 stacks completos de voz a voz para ver qué pasa en un turno real de conversación.
+# Voice Agent Benchmark
 
 [![tests](https://github.com/jmnzcn/voice-agent-benchmark/actions/workflows/test.yml/badge.svg)](https://github.com/jmnzcn/voice-agent-benchmark/actions/workflows/test.yml)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
-![Servicios](https://img.shields.io/badge/servicios-15-0A66C2)
-![Llamadas](https://img.shields.io/badge/llamadas_medidas-700-2EA44F)
-![Local](https://img.shields.io/badge/local-Ollama%20%C2%B7%20faster--whisper%20%C2%B7%20Piper-555)
+![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-orange)
 
-[English summary](#-english-summary) · [Resultados](#-resultados-clave) · [Metodología](#-metodología) · [Cómo reproducirlo](#-cómo-reproducirlo)
+Which speech-to-text, language model and text-to-speech services should a Spanish-speaking voice
+agent use? I measured 15 of them, 12 in the cloud and 3 running locally, on latency, accuracy, cost,
+privacy, customization and integration effort. Then I built 4 complete voice-to-voice stacks to see
+what one real turn of conversation looks like end to end.
 
-![Carrera de un turno de voz a voz entre los 4 stacks, con los tiempos medidos](docs/demo.gif)
+![One voice-to-voice turn raced across the 4 stacks, with measured timings](docs/demo.gif)
 
-<sub>Repetición animada de un turno real: tiempos por etapa, transcripciones y respuestas tomadas de [`results/e2e_results.csv`](results/e2e_results.csv) (corrida mediana de 5 por stack; después de 10 s el reloj se acelera ×8).</sub>
+<sub>A replay of a real turn: stage timings, transcripts and answers come from [`results/e2e_results.csv`](results/e2e_results.csv) (the median of 5 runs per stack; after 10 s the clock speeds up ×8).</sub>
 
-**▶ [Explora los resultados interactivos](https://jmnzcn.github.io/voice-agent-benchmark/)**: arma tu propio stack STT + LLM + TTS y mira cuánto tardaría y costaría un turno, compara los 15 servicios llamada por llamada y lee qué entendió y respondió cada stack.
+There is an [interactive results page](https://jmnzcn.github.io/voice-agent-benchmark/) (in Spanish)
+where you can put together your own stack and see what a turn would take and cost, compare the 15
+services call by call, and read what each stack heard and answered.
 
----
+## Results
 
-## 📊 Resultados clave
+![Latency per stage across the 4 end-to-end stacks](docs/graficos_generados/e2e_desglose_latencia.png)
 
-![Desglose de latencia por etapa en los 4 stacks E2E](docs/graficos_generados/e2e_desglose_latencia.png)
-
-| Stack (STT → LLM → TTS) | Latencia por turno (prom.) | Costo por turno | Para qué sirve |
+| Stack (STT → LLM → TTS) | Latency per turn | Cost per turn | Good for |
 |---|---:|---:|---|
-| ⚡ **Deepgram → Groq → Google** | **1,8 s** | **$0,0072** | Demos y producción de baja latencia |
-| ☁️ Azure → GPT-4o → Azure | 7,8 s | $0,0087 | Empresas que ya están en Azure |
-| 💎 AssemblyAI → GPT-4o → ElevenLabs | 9,0 s | $0,0877 | Máxima calidad de voz |
-| 🔒 faster-whisper → Ollama → Piper | 62,0 s | $0 | Datos que no pueden salir de la máquina |
+| Deepgram → Groq → Google | 1.8 s | $0.0072 | demos and low-latency production |
+| Azure → GPT-4o → Azure | 7.8 s | $0.0087 | companies already on Azure |
+| AssemblyAI → GPT-4o → ElevenLabs | 9.0 s | $0.0877 | the most natural voice |
+| faster-whisper → Ollama → Piper | 62.0 s | $0 | data that can't leave the machine |
 
-*25 turnos por stack (5 audios × 5 corridas).*
+25 turns per stack (5 audio clips × 5 runs). What I found:
 
-**Lo que encontré:**
-
-1. **El stack más rápido también fue el más barato.** Deepgram + Groq + Google respondió en 1,8 s por turno: **~5× más rápido y ~12× más barato** que el stack premium. Más caro no significa mejor experiencia conversacional.
-2. **El STT local casi empata con el mejor de la nube.** faster-whisper large-v3 logró un WER de **5,0 %**, contra 4,7 % de AssemblyAI (el mejor), a costo de API $0. El precio es la latencia: ~37 s por audio en una GPU de 4 GB.
-3. **Groq domina la latencia de LLM:** 695 ms en promedio y **227 ms al primer token**, ~2,5× más rápido que GPT-4o y ~9–10× más que Claude Sonnet 4.6 o Gemini 2.5 Flash.
-4. **No todos los LLM respetan un esquema JSON.** OpenAI, Anthropic y Groq devolvieron JSON válido el 100 % de las veces; Ollama (Llama 3.2 3B) el 80 % y Gemini 2.5 Flash solo el 60 %.
-5. **En TTS, la diferencia de precio es enorme.** ElevenLabs tuvo la mejor naturalidad (5/5) pero cuesta **~19×** lo que Google Neural2, que además fue el más rápido (300 ms).
-6. **Lo 100 % local es viable para privacidad, no para tiempo real** en hardware modesto: 62 s por turno, con el STT como cuello de botella (~78 % del tiempo).
+1. The fastest stack was also the cheapest. Deepgram, Groq and Google answered in 1.8 s per turn,
+   about 5 times faster and 12 times cheaper than the premium stack. Paying more did not buy a
+   better conversation.
+2. Local speech-to-text almost matched the best cloud service. faster-whisper large-v3 had a 5.0 %
+   word error rate, against 4.7 % for AssemblyAI, at no API cost. The price is time: about 37 s per
+   clip on a 4 GB GPU.
+3. Groq was by far the fastest language model: 695 ms on average and 227 ms to the first token,
+   about 2.5 times faster than GPT-4o and 9 to 10 times faster than Claude Sonnet 4.6 or Gemini 2.5
+   Flash.
+4. Not every model follows a JSON schema. OpenAI, Anthropic and Groq returned valid JSON every time,
+   Ollama (Llama 3.2 3B) 80 % of the time and Gemini 2.5 Flash only 60 %.
+5. Text-to-speech prices vary a lot. ElevenLabs sounded the most natural (5 out of 5) but costs about
+   19 times as much as Google Neural2, which was also the fastest at 300 ms.
+6. Running everything locally works for privacy, not for real-time conversation on modest hardware:
+   62 s per turn, 78 % of it in speech-to-text.
 
 <table>
 <tr>
-<td width="50%"><img src="docs/graficos_generados/llm_latencia_vs_costo.png" alt="LLM: latencia vs costo"></td>
-<td width="50%"><img src="docs/graficos_generados/stt_quality.png" alt="STT: WER promedio"></td>
+<td width="50%"><img src="docs/graficos_generados/llm_latencia_vs_costo.png" alt="LLM latency vs cost"></td>
+<td width="50%"><img src="docs/graficos_generados/stt_quality.png" alt="STT average word error rate"></td>
 </tr>
 <tr>
-<td align="center"><sub>LLM: latencia vs. costo por llamada</sub></td>
-<td align="center"><sub>STT: WER promedio (menor es mejor)</sub></td>
+<td align="center"><sub>LLM: latency vs. cost per call</sub></td>
+<td align="center"><sub>STT: average word error rate (lower is better)</sub></td>
 </tr>
 </table>
 
-### Matriz completa
+### All 15 services
 
-| Categoría | Servicio | Modelo | Latencia prom. | Calidad | USD/llamada | Privacidad (1–5) |
+| Type | Service | Model | Avg. latency | Quality | USD per call | Privacy (1–5) |
 |---|---|---|---:|---|---:|:---:|
-| LLM | Groq | llama-3.3-70b-versatile | **695 ms** | JSON 100 % · coherencia 4/5 | 0,0002 | 4 |
-| LLM | OpenAI | gpt-4o | 1.781 ms | JSON 100 % · coherencia 5/5 | 0,0020 | 3 |
-| LLM | Google | gemini-2.5-flash | 5.928 ms | JSON 60 % · coherencia 4/5 | 0,0008 | 3 |
-| LLM | Anthropic | claude-sonnet-4-6 | 6.916 ms | JSON 100 % · coherencia 5/5 | 0,0057 | 4 |
-| LLM | Ollama (local) | llama3.2:3b | 36.643 ms | JSON 80 % · coherencia 3/5 | 0 | **5** |
-| STT | Deepgram | nova-3 | **429 ms** | WER 6,6 % | 0,0013 | 3 |
-| STT | OpenAI | whisper-1 | 2.127 ms | WER 6,5 % | 0,0018 | 3 |
-| STT | AssemblyAI | universal-3-pro | 4.218 ms | **WER 4,7 %** | 0,0011 | 3 |
-| STT | Azure | speech-recognition-standard | 6.892 ms | WER 7,1 % | 0,0049 | 3 |
-| STT | faster-whisper (local) | large-v3 | 37.482 ms | WER 5,0 % | 0 | **5** |
-| TTS | Google | es-ES-Neural2-A | **300 ms** | naturalidad 4/5 | 0,0027 | 3 |
-| TTS | Azure | es-CR-MariaNeural | 849 ms | naturalidad 4/5 | 0,0027 | 3 |
-| TTS | ElevenLabs | eleven_multilingual_v2 | 2.148 ms | **naturalidad 5/5** | 0,0512 | 3 |
-| TTS | Piper (local) | es_ES-davefx-medium | 3.026 ms | naturalidad 3/5 | 0 | **5** |
-| TTS | OpenAI | gpt-4o-mini-tts | 3.369 ms | naturalidad 4/5 | 0,1024 | 3 |
+| LLM | Groq | llama-3.3-70b-versatile | 695 ms | JSON 100 % · coherence 4/5 | 0.0002 | 4 |
+| LLM | OpenAI | gpt-4o | 1,781 ms | JSON 100 % · coherence 5/5 | 0.0020 | 3 |
+| LLM | Google | gemini-2.5-flash | 5,928 ms | JSON 60 % · coherence 4/5 | 0.0008 | 3 |
+| LLM | Anthropic | claude-sonnet-4-6 | 6,916 ms | JSON 100 % · coherence 5/5 | 0.0057 | 4 |
+| LLM | Ollama (local) | llama3.2:3b | 36,643 ms | JSON 80 % · coherence 3/5 | 0 | 5 |
+| STT | Deepgram | nova-3 | 429 ms | WER 6.6 % | 0.0013 | 3 |
+| STT | OpenAI | whisper-1 | 2,127 ms | WER 6.5 % | 0.0018 | 3 |
+| STT | AssemblyAI | universal-3-pro | 4,218 ms | WER 4.7 % | 0.0011 | 3 |
+| STT | Azure | speech-recognition-standard | 6,892 ms | WER 7.1 % | 0.0049 | 3 |
+| STT | faster-whisper (local) | large-v3 | 37,482 ms | WER 5.0 % | 0 | 5 |
+| TTS | Google | es-ES-Neural2-A | 300 ms | naturalness 4/5 | 0.0027 | 3 |
+| TTS | Azure | es-CR-MariaNeural | 849 ms | naturalness 4/5 | 0.0027 | 3 |
+| TTS | ElevenLabs | eleven_multilingual_v2 | 2,148 ms | naturalness 5/5 | 0.0512 | 3 |
+| TTS | Piper (local) | es_ES-davefx-medium | 3,026 ms | naturalness 3/5 | 0 | 5 |
+| TTS | OpenAI | gpt-4o-mini-tts | 3,369 ms | naturalness 4/5 | 0.1024 | 3 |
 
-Más detalle (TTFT, WER por fuente de audio, MOS, customización, integración): [`docs/dimensiones_datos/`](docs/dimensiones_datos/). Todos los gráficos: [`docs/graficos_generados/`](docs/graficos_generados/).
+More detail (time to first token, error rate by audio source, MOS, customization, integration) is in
+[`docs/dimensiones_datos/`](docs/dimensiones_datos/), and every chart is in
+[`docs/graficos_generados/`](docs/graficos_generados/).
 
----
+## Which one to pick
 
-## 🧭 ¿Cuál elegir?
+- If it has to feel like a conversation: Deepgram, Groq and Google TTS.
+- If the voice matters most (branding, narration): ElevenLabs, with GPT-4o or Claude for reasoning.
+- If you need reliable structured output (tool calling, JSON): GPT-4o, Claude or Groq.
+- If the data can't leave the organization: faster-whisper, Ollama and Piper, on a stronger GPU than
+  the one I had.
+- If you're already on Azure: the Azure stack costs about the same as the fast one, with more latency.
 
-- **Necesito que se sienta como una conversación** → Deepgram + Groq + Google TTS.
-- **Necesito la voz más natural** (marca, narración) → ElevenLabs, y GPT-4o o Claude para el razonamiento.
-- **Necesito salidas estructuradas confiables** (tool calling, JSON) → GPT-4o, Claude o Groq.
-- **Los datos no pueden salir de la organización** → faster-whisper + Ollama + Piper, con una GPU más potente que la de esta prueba.
-- **Ya estoy en Azure** → el stack Azure da un costo similar al rápido, con más latencia.
+## How I measured
 
----
+Every input ran 5 times. The language models got 5 prompts, one of them requiring strict JSON;
+text-to-speech got 5 texts; speech-to-text got 14 Spanish audio clips, checked by SHA-256 so every
+service heard exactly the same files. The 4 end-to-end stacks each ran on 5 clips.
 
-## 🔬 Metodología
+Latency is the total time per call, plus time to first token for streamed language models.
+Speech-to-text accuracy is word error rate with `jiwer`. For the language models I checked JSON
+validity and rated coherence by hand. For text-to-speech I rated naturalness by listening and
+measured intelligibility by transcribing the audio back. Costs use the public prices in
+[`common/rates.py`](common/rates.py), and privacy, customization and integration are scored 1 to 5
+with the criteria in [`analysis/dimensions_catalog.py`](analysis/dimensions_catalog.py).
 
-- **Protocolo:** 5 corridas por input. LLM con 5 prompts (incluye uno que exige JSON estricto), TTS con 5 textos y STT con 14 audios en español (con SHA-256 para verificar que son los mismos).
-- **E2E:** 4 stacks completos STT → LLM → TTS, con 5 audios por stack.
-- **Latencia:** tiempo total por llamada; en LLM también el tiempo al primer token (TTFT) con streaming.
-- **Precisión:** WER con `jiwer` en STT; revisión manual de coherencia y validación de JSON en LLM; MOS de inteligibilidad (round-trip con STT) y naturalidad por escucha en TTS.
-- **Costo:** USD por llamada con las tarifas públicas en [`common/rates.py`](common/rates.py).
-- **Privacidad, customización e integración:** escala 1–5 con criterios en [`analysis/dimensions_catalog.py`](analysis/dimensions_catalog.py).
-- **Hardware local:** Windows 11, 12 CPU lógicos, 32 GB RAM, NVIDIA Quadro P2000 (4 GB VRAM). Los resultados locales mejorarían mucho con una GPU actual.
+The local services ran on Windows 11 with 12 logical CPUs, 32 GB of RAM and an NVIDIA Quadro P2000
+(4 GB). A current GPU would change the local numbers a lot.
 
-**Limitaciones:** es una sola corrida desde Costa Rica, así que la latencia de la nube incluye la red; los puntajes de MOS y coherencia son de un solo evaluador; y las tarifas cambian con el tiempo. Los CSV crudos están en [`results/`](results/) para que cualquiera revise o rehaga el análisis.
+Limits: it is one run from Costa Rica, so cloud latency includes the network; the naturalness and
+coherence ratings are mine alone; and prices change. The raw CSVs are in [`results/`](results/) so
+anyone can check or redo the analysis.
 
-![Arquitectura del pipeline](docs/graficos_generados/pipeline_comunicacion.png)
+![Pipeline architecture](docs/graficos_generados/pipeline_comunicacion.png)
 
----
+## Run it
 
-## 🚀 Cómo reproducirlo
-
-Requisitos: Python 3.11+, Git y FFmpeg. Para los servicios locales: Ollama (`llama3.2:3b`), GPU recomendable para faster-whisper y Piper configurado con las variables `PIPER_*` de `.env.example`. Si falta la API key de un proveedor, ese servicio se omite y el resto sigue.
+You need Python 3.11+, Git and FFmpeg. For the local services: Ollama with `llama3.2:3b`, ideally a
+GPU for faster-whisper, and Piper configured through the `PIPER_*` variables in `.env.example`. A
+provider without an API key is skipped and the rest still run.
 
 ```powershell
 git clone https://github.com/jmnzcn/voice-agent-benchmark.git
 cd voice-agent-benchmark
-
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-copy .env.example .env   # completar las keys que tengas
-
+copy .env.example .env   # fill in the keys you have
 python scripts/bootstrap.py
 ```
 
-**Solo regenerar tablas y gráficos** a partir de los CSV incluidos (no gasta créditos):
+To rebuild every table and chart from the committed CSVs, without spending API credits:
 
 ```powershell
 python scripts/run_analysis.py
 ```
 
-**Corrida completa** (usa las APIs y tarda bastante en local):
+The full run calls the APIs and takes a while locally:
 
 ```powershell
 python -m run_all 5
@@ -133,75 +143,51 @@ python scripts/run_analysis.py
 ```
 
 <details>
-<summary>Otros comandos</summary>
+<summary>Other commands</summary>
 
 ```powershell
 python -m run_all 5 --skip-e2e
 python -m benchmarks.pipeline.run_e2e 5
-python scripts/dedupe_results.py      # si re-corriste inputs sin reset_results
+python scripts/dedupe_results.py      # if you re-ran inputs without reset_results
 python scripts/reset_results.py
-python scripts/run_analysis.py --with-optional   # recalcula MOS de inteligibilidad con Whisper en CPU (lento)
+python scripts/run_analysis.py --with-optional   # recompute intelligibility with Whisper on CPU (slow)
 python scripts/smoke_analysis.py
-python scripts/build_site_data.py     # regenera docs/site/data.json para la página interactiva
+python scripts/build_site_data.py     # rebuild docs/site/data.json for the interactive page
 python -m pytest tests/ -q
 ```
 
-Para regenerar los audios de prueba desde cero: [`data/test_audio/README.md`](data/test_audio/README.md).
+To regenerate the test audio from scratch, see [`data/test_audio/README.md`](data/test_audio/README.md).
 </details>
 
-<details>
-<summary>Estructura del repositorio</summary>
+The code is organized as `run_all.py` (the entry point), `benchmarks/` (llm, stt, tts and the
+end-to-end pipeline), `common/` (prompts, texts, prices), `analysis/` (aggregation and charts),
+`data/` (the 14 clips and reference transcripts), `results/` (the CSVs) and `examples/` (a C#
+client for Unity). API keys live only in `.env`, which is git-ignored, and `bootstrap.py` warns if
+it ever gets tracked.
 
-```text
-run_all.py                 entrada única de la corrida
-benchmarks/                llm/, stt/, tts/, pipeline/ (E2E)
-common/                    prompts, textos TTS, catálogo STT, tarifas
-analysis/                  agregación, estadísticas, gráficos
-data/                      14 audios WAV, transcripciones de referencia, notas de calidad
-results/                   CSV de la corrida, manifiesto, hardware y red
-docs/dimensiones_datos/    tablas por dimensión (Markdown)
-docs/graficos_generados/   gráficos PNG
-docs/pipeline.puml         diagrama UML del pipeline
-examples/                  cliente C# de ejemplo para Unity
-scripts/                   bootstrap, análisis, validación
-tests/                     pytest
-```
-</details>
+## Background
 
-<details>
-<summary>Seguridad: qué nunca se sube</summary>
+This was project 2 of PF-3312, Intelligent Virtual Agents Lab (Dr. Alexander Barquero), in the
+graduate program in Computer Science at the University of Costa Rica, first semester of 2026. The
+full report (in Spanish) is [`docs/informe_PF3312_Proyecto2_B03230.pdf`](docs/informe_PF3312_Proyecto2_B03230.pdf).
+The services belong to their providers, and FLEURS, Common Voice and the other datasets cited have
+their own licenses. I used ChatGPT and Claude to help organize ideas and review the writing; the
+experiment design, measurements, analysis and conclusions are mine.
 
-- `.env` y cualquier archivo con keys (`secrets/`, JSON de cuenta de GCP). Solo se versiona `.env.example`, vacío.
-- `models/`, el binario de Piper (`tools/piper/`), `results/raw/` y `results/tts_outputs/`.
+## Resumen en español
 
-`python scripts/bootstrap.py` avisa si `.env` quedó trackeado por error.
-</details>
+Medí 15 servicios de voz y lenguaje (12 en la nube y 3 locales) para un agente de voz en español, en
+latencia, precisión, costo, privacidad, customización e integración, y armé 4 stacks completos de
+voz a voz. El más rápido también fue el más barato: Deepgram, Groq y Google respondieron en 1,8 s por
+turno a $0,007, unas 5 veces más rápido y 12 veces más barato que el stack premium. El reconocimiento
+de voz local (faster-whisper) casi empató con el mejor de la nube, con un WER de 5,0 % contra 4,7 %.
+Todo se puede reproducir: los CSV crudos, los audios verificados con SHA-256 y los scripts que
+regeneran cada tabla y gráfico sin gastar créditos.
 
----
+## License
 
-## 🇺🇸 English summary
+[PolyForm Noncommercial 1.0.0](LICENSE). You can read, run and modify it for noncommercial purposes,
+including evaluating it for a job. Commercial use needs a license from me:
+[neyfred@gmail.com](mailto:neyfred@gmail.com).
 
-I benchmarked **15 speech and language services** (12 cloud, 3 fully local) for a **Spanish-speaking voice agent**, across latency, accuracy, cost, privacy, customization and integration effort, plus **4 end-to-end STT → LLM → TTS stacks**.
-
-- **Fastest stack was also the cheapest:** Deepgram → Groq → Google TTS answered in **1.8 s per turn at $0.007**, about 5× faster and 12× cheaper than the premium stack (AssemblyAI → GPT-4o → ElevenLabs).
-- **Local STT nearly matches the best cloud option:** faster-whisper large-v3 reached **5.0 % WER** vs. 4.7 % for AssemblyAI, at $0 API cost, but ~37 s per clip on a 4 GB GPU.
-- **[Interactive results](https://jmnzcn.github.io/voice-agent-benchmark/)** (Spanish UI): build your own STT + LLM + TTS stack and compare every service.
-- **Groq leads LLM latency** (695 ms average, 227 ms to first token). OpenAI, Anthropic and Groq returned valid JSON 100 % of the time; Gemini 2.5 Flash only 60 %.
-- **TTS pricing varies ~19×** between ElevenLabs (best naturalness) and Google Neural2 (fastest).
-- **Fully offline is viable for privacy, not real time** on modest hardware (62 s per turn).
-
-Everything is reproducible: raw CSVs, SHA-256-verified test audio and scripts that rebuild every table and chart without spending API credits.
-
----
-
-## 🎓 Contexto académico
-
-Proyecto 2 del curso PF-3312 Laboratorio de Agentes Virtuales Inteligentes (Dr. Alexander Barquero), Posgrado en Computación e Informática, Universidad de Costa Rica, I ciclo 2026. Informe completo: [`docs/informe_PF3312_Proyecto2_B03230.pdf`](docs/informe_PF3312_Proyecto2_B03230.pdf).
-
-Los servicios pertenecen a sus proveedores; FLEURS, Common Voice y los demás datasets citados tienen su propia licencia.
-
-**Uso de herramientas de IA:** usé ChatGPT (OpenAI) y Claude (Anthropic) como apoyo para organizar ideas y revisar la redacción. El diseño del experimento, las mediciones, el análisis y las conclusiones son de mi autoría.
-
----
-
-**Ney Fred Jiménez Campos** · [LinkedIn](https://www.linkedin.com/in/neyfred/) · [GitHub](https://github.com/jmnzcn) · neyfred@gmail.com
+Ney Fred Jiménez Campos · [LinkedIn](https://www.linkedin.com/in/neyfred/) · [GitHub](https://github.com/jmnzcn)
